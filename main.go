@@ -25,7 +25,7 @@ func main() {
 		fmt.Println("Resposta mais rápida do Brasil API, response:")
 		fmt.Println(response)
 
-	case <-time.After(time.Second * 5):
+	case <-time.After(time.Second * 1):
 		println("timeout")
 
 	}
