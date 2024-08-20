@@ -11,39 +11,38 @@ import (
 
 func main() {
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		returnViaCep := make(chan map[string]string)
-		returnBrasil := make(chan map[string]string)
+	returnViaCep := make(chan map[string]string)
+	returnBrasil := make(chan map[string]string)
 
-		go getCepByViaCep(returnViaCep, "14412402")
-		go getCepByBrasilApi(returnBrasil, "14412402")
+	go getCepByViaCep(returnViaCep, "14412402")
+	go getCepByBrasilApi(returnBrasil, "14412402")
 
-		select {
-		case response := <-returnViaCep:
-			fmt.Println("Resposta mais rápida do VIA CEP, response:")
-			fmt.Println(response)
-		case response := <-returnBrasil:
-			fmt.Println("Resposta mais rápida do Brasil API, response:")
-			fmt.Println(response)
+	select {
+	case response := <-returnViaCep:
+		fmt.Println("Resposta mais rápida do VIA CEP, response:")
+		fmt.Println(response)
+	case response := <-returnBrasil:
+		fmt.Println("Resposta mais rápida do Brasil API, response:")
+		fmt.Println(response)
 
-		case <-time.After(time.Second * 5):
-			println("timeout")
+	case <-time.After(time.Second * 5):
+		println("timeout")
 
-		}
-	})
-
-	http.ListenAndServe(":8080", nil)
+	}
 
 }
 
 func getCepByViaCep(ch chan map[string]string, cep string) error {
 	resp, err := http.Get(fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep))
 	if err != nil {
+		log.Println(err)
 		return err
 	}
+
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -62,11 +61,13 @@ func getCepByViaCep(ch chan map[string]string, cep string) error {
 func getCepByBrasilApi(ch chan map[string]string, cep string) error {
 	resp, err := http.Get(fmt.Sprintf("https://brasilapi.com.br/api/cep/v1/%s", cep))
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -74,6 +75,7 @@ func getCepByBrasilApi(ch chan map[string]string, cep string) error {
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		log.Println(err.Error())
+		return err
 	}
 
 	ch <- response
